@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Workly.API.Extensions;
+using Workly.API.Modules;
 using Workly.Infrastructure.Persistence.Context;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +9,8 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 builder.Services.AddSwaggerDocumentation();
+
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddDbContext<WorklyDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("SQLiteConnection")));
@@ -52,5 +55,8 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Kullanýcý kimliðini almak için middleware ekle
+app.UseMiddleware<UserContextMiddleware>();
 
 app.Run();

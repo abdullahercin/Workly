@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Workly.Application.DTOs.Auth;
-using Workly.Application.Interfaces.Auth;
+using Workly.Application.Interfaces;
 
 namespace Workly.API.Controllers
 {

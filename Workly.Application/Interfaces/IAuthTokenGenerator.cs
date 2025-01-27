@@ -1,4 +1,4 @@
-﻿namespace Workly.Application.Interfaces.Auth
+﻿namespace Workly.Application.Interfaces
 {
     public interface IAuthTokenGenerator
     {

@@ -1,6 +1,4 @@
-﻿using Workly.Domain.Entities.Bases;
-
-namespace Workly.Domain.Entities.Users
+﻿namespace Workly.Domain.Entities
 {
     public class User : BaseEntity
     {

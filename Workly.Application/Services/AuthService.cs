@@ -1,6 +1,6 @@
-﻿using Workly.Application.Interfaces.Auth;
+﻿using Workly.Application.Interfaces;
 
-namespace Workly.Application.Services.Auth
+namespace Workly.Application.Services
 {
     public class AuthService(IAuthTokenGenerator tokenGenerator) : IAuthService
     {

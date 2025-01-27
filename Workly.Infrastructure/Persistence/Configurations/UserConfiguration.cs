@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Workly.Domain.Entities.Users;
+using Workly.Domain.Entities;
 
 namespace Workly.Infrastructure.Persistence.Configurations
 {

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Workly.Domain.Entities.Bases
+namespace Workly.Domain.Entities
 {
     public class BaseEntity
     {

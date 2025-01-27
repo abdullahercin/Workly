@@ -1,4 +1,5 @@
 ﻿using Microsoft.OpenApi.Models;
+using Workly.API.Models;
 
 namespace Workly.API.Extensions
 {
@@ -9,8 +10,21 @@ namespace Workly.API.Extensions
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Workly API", Version = "v1" });
-            });
 
+                // ApiResponse tipi için schema ekleme
+                c.MapType(typeof(ApiResponse<>), () => new OpenApiSchema
+                {
+                    Type = "object",
+                    Properties = new Dictionary<string, OpenApiSchema>
+                    {
+                        { "issuccess", new OpenApiSchema { Type = "boolean" } },
+                        { "message", new OpenApiSchema { Type = "string" } },
+                        { "data", new OpenApiSchema { Type = "object" } }, // Generic veri için daha detaylı yapılandırma gerekebilir
+                        { "errors", new OpenApiSchema { Type = "list<string>" } },
+                    }
+                });
+            });
+            
             return services;
         }
 

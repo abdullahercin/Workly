@@ -3,9 +3,9 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using Workly.Application.Interfaces.Auth;
+using Workly.Application.Interfaces;
 
-namespace Workly.Infrastructure.Services.Auth
+namespace Workly.Infrastructure.Services
 {
     public class AuthTokenGenerator(IConfiguration configuration) : IAuthTokenGenerator
     {

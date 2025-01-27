@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Workly.Domain.Entities;
 
 namespace Workly.Infrastructure.Persistence.Context
 {
@@ -11,6 +12,6 @@ namespace Workly.Infrastructure.Persistence.Context
             base.OnModelCreating(modelBuilder);
         }
 
-        public DbSet<Domain.Entities.Users.User> User { get; set; }
+        public DbSet<User> User { get; set; }
     }
 }
