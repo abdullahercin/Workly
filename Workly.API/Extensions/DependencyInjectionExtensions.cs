@@ -1,4 +1,5 @@
 ﻿using Workly.Application.Interfaces;
+using Workly.Application.Models;
 using Workly.Application.Services;
 using Workly.Domain.Interfaces;
 using Workly.Infrastructure.Persistence.Repositories;
@@ -8,7 +9,7 @@ namespace Workly.API.Extensions
 {
     public static class DependencyInjectionExtensions
     {
-        public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+        public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
         {
             //Generic
             services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
@@ -23,6 +24,10 @@ namespace Workly.API.Extensions
 
             //UserContext, userId aktarımı için
             services.AddScoped<IUserContext, UserContext>();
+
+            //Mail
+            services.Configure<SmtpSettings>(configuration.GetSection("SmtpSettings"));
+            services.AddScoped<IMailService, MailService>();
 
             return services;
         }

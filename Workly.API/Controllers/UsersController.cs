@@ -10,21 +10,29 @@ namespace Workly.API.Controllers
     public class UsersController(IUserService userService) : ControllerBase
     {
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterUserDto registerUserDto, CancellationToken cancellationToken)
+        public async Task<IActionResult> Register([FromBody] RegisterUserDto registerUserDto,
+            CancellationToken cancellationToken)
+        {
+            // Kullanıcıyı oluştur
+            var userId = await userService.CreateUserAsync(registerUserDto, cancellationToken);
+
+            // Oluşan kullanıcı Id'sini dön
+            return StatusCode(StatusCodes.Status201Created, ApiResponse<int>.Success(userId));
+        }
+
+
+        [HttpGet("confirm-email")]
+        public async Task<IActionResult> ConfirmEmail([FromQuery] string token, CancellationToken cancellationToken)
         {
             try
             {
-                // Kullanıcıyı oluştur
-                var userId = await userService.CreateUserAsync(registerUserDto, cancellationToken);
-
-                // Oluşan kullanıcı Id'sini dön
-                return Ok(ApiResponse<int>.Success(userId,
-                    "Kayıt başarılı, Lütfen e-postanızı kontrol edip doğrulama işlemini yapın."));
+                var result = await userService.ConfirmEmailAsync(token, cancellationToken);
+                if(result) return Ok(ApiResponse<string>.Success("Email başarıyla doğrulandı."));
+                return BadRequest(ApiResponse<string>.Fail("Email doğrulama başarısız."));
             }
             catch (Exception ex)
             {
-                // Hata durumunda uygun bir yanıt döndür
-                return BadRequest(new { Error = ex.Message });
+                return BadRequest(ApiResponse<string>.Fail("Email doğrulama başarısız: " + ex.Message));
             }
         }
     }

@@ -9,8 +9,8 @@ namespace Workly.Infrastructure.Persistence.Repositories
 {
     public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
-        private readonly WorklyDbContext _dbContext;
-        private readonly DbSet<T> _dbSet;
+        protected readonly WorklyDbContext _dbContext;
+        protected readonly DbSet<T> _dbSet;
         private readonly IUserContext _userContext;
 
         public GenericRepository(WorklyDbContext dbContext, IUserContext userContext)
@@ -37,132 +37,84 @@ namespace Workly.Infrastructure.Persistence.Repositories
 
         public async Task<int> AddAsync(T entity, CancellationToken cancellationToken = default)
         {
-            try
+            if (entity is BaseEntity baseEntity)
             {
-                if (entity is BaseEntity baseEntity)
-                {
-                    baseEntity.InsertedAt = DateTime.UtcNow;
-                    baseEntity.InsertedBy = _userContext.UserId; // IUserContext ile kullanıcı ID'si alınıyor
-                }
-
-                await _dbSet.AddAsync(entity, cancellationToken);
-
-                await _dbContext.SaveChangesAsync(cancellationToken);
-
-                // BaseEntity'den RecId'yi döndür
-                if (entity is BaseEntity resultEntity)
-                {
-                    return resultEntity.RecId;
-                }
-
-                return 0; // Eğer entity BaseEntity değilse
+                baseEntity.InsertedAt = DateTime.UtcNow;
+                baseEntity.InsertedBy = _userContext.UserId; // IUserContext ile kullanıcı ID'si alınıyor
             }
-            catch (Exception e)
+
+            await _dbSet.AddAsync(entity, cancellationToken);
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            // BaseEntity'den RecId'yi döndür
+            if (entity is BaseEntity resultEntity)
             {
-                Console.WriteLine($"Hata oluştu: {e.Message}");
-                throw;
+                return resultEntity.RecId;
             }
+
+            return 0; // Eğer entity BaseEntity değilse
         }
 
         public async Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
         {
-            try
+            if (entity is BaseEntity baseEntity)
             {
-                if (entity is BaseEntity baseEntity)
-                {
-                    baseEntity.UpdatedAt = DateTime.UtcNow;
-                    baseEntity.UpdatedBy = _userContext.UserId;
+                baseEntity.UpdatedAt = DateTime.UtcNow;
+                baseEntity.UpdatedBy = _userContext.UserId;
 
-                    _dbContext.Entry(baseEntity).Property(x => x.InsertedAt).IsModified = false;
-                    _dbContext.Entry(baseEntity).Property(x => x.InsertedBy).IsModified = false;
-                }
+                _dbContext.Entry(baseEntity).Property(x => x.InsertedAt).IsModified = false;
+                _dbContext.Entry(baseEntity).Property(x => x.InsertedBy).IsModified = false;
+            }
 
-                _dbSet.Update(entity);
-                await _dbContext.SaveChangesAsync(cancellationToken);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Hata oluştu: {e.Message}");
-                throw;
-            }
+            _dbSet.Update(entity);
+            await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
         public async Task RemoveAsync(int id, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                var entity = await GetByIdAsync(id, cancellationToken);
-                if (entity == null) throw new Exception($"{id} numaralı Kayıt bulunamadı.");
-                
-                _dbSet.Remove(entity);
-                
-                await _dbContext.SaveChangesAsync(cancellationToken);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
+            var entity = await GetByIdAsync(id, cancellationToken);
+            if (entity == null) throw new Exception($"{id} numaralı Kayıt bulunamadı.");
+
+            _dbSet.Remove(entity);
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
         public async Task AddRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
         {
-            try
+            if (entities is IEnumerable<BaseEntity> baseEntities)
             {
-                if (entities is IEnumerable<BaseEntity> baseEntities)
+                foreach (var entity in baseEntities)
                 {
-                    foreach (var entity in baseEntities)
-                    {
-                        entity.InsertedAt = DateTime.UtcNow;
-                        entity.InsertedBy = _userContext.UserId;
-                    }
+                    entity.InsertedAt = DateTime.UtcNow;
+                    entity.InsertedBy = _userContext.UserId;
                 }
+            }
 
-                await _dbSet.AddRangeAsync(entities, cancellationToken);
-                await _dbContext.SaveChangesAsync(cancellationToken);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Hata oluştu: {e.Message}");
-                throw;
-            }
+            await _dbSet.AddRangeAsync(entities, cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
         public async Task UpdateRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
         {
-            try
+            if (entities is IEnumerable<BaseEntity> baseEntities)
             {
-                if (entities is IEnumerable<BaseEntity> baseEntities)
+                foreach (var entity in baseEntities)
                 {
-                    foreach (var entity in baseEntities)
-                    {
-                        entity.UpdatedAt = DateTime.UtcNow;
-                        entity.UpdatedBy = _userContext.UserId;
-                    }
+                    entity.UpdatedAt = DateTime.UtcNow;
+                    entity.UpdatedBy = _userContext.UserId;
                 }
+            }
 
-                _dbSet.UpdateRange(entities);
-                await _dbContext.SaveChangesAsync(cancellationToken);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Hata oluştu: {e.Message}");
-                throw;
-            }
+            _dbSet.UpdateRange(entities);
+            await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
         public async Task RemoveRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                _dbSet.RemoveRange(entities);
-                await _dbContext.SaveChangesAsync(cancellationToken);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Hata oluştu: {e.Message}");
-                throw;
-            }
+            _dbSet.RemoveRange(entities);
+            await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
         public async Task<bool> AnyAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)

@@ -2,9 +2,9 @@
 {
     public class User : BaseEntity
     {
-        public string Email { get; set; } // Kullanıcı email adresi
-        public string PasswordHash { get; set; } // Şifre hashlenmiş hali
-        public string Name { get; set; } // Kullanıcının adı
+        public string Email { get; set; } = null!; // Kullanıcı email adresi
+        public string PasswordHash { get; set; } = null!; // Şifre hashlenmiş hali
+        public string Name { get; set; } = null!; // Kullanıcının adı
         public string? PhoneNumber { get; set; } // Telefon numarası (opsiyonel)
         public bool IsEmailConfirmed { get; set; } = false; // Email doğrulama durumu
         public string? EmailConfirmationToken { get; set; } // Email doğrulama için token
