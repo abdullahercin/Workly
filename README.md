@@ -1,6 +1,9 @@
-C# .Net 9 
+C# .Net 9
+
 EntityFramework Core DbFirst
+
 Authentication
+
 Authorization
 JWTToken ile token bazlı Kimlik Doğrulama
 SQLite 
