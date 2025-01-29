@@ -5,7 +5,7 @@ using Workly.Application.Interfaces;
 
 namespace Workly.API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/users")]
     [ApiController]
     public class UsersController(IUserService userService) : ControllerBase
     {
@@ -22,11 +22,14 @@ namespace Workly.API.Controllers
 
 
         [HttpGet("confirm-email")]
-        public async Task<IActionResult> ConfirmEmail([FromQuery] string token, CancellationToken cancellationToken)
+        public async Task<IActionResult> ConfirmEmail(
+            [FromQuery] string userId,
+            [FromQuery] string token, 
+            CancellationToken cancellationToken)
         {
             try
             {
-                var result = await userService.ConfirmEmailAsync(token, cancellationToken);
+                var result = await userService.ConfirmEmailAsync(userId, token, cancellationToken);
                 if(result) return Ok(ApiResponse<string>.Success("Email başarıyla doğrulandı."));
                 return BadRequest(ApiResponse<string>.Fail("Email doğrulama başarısız."));
             }

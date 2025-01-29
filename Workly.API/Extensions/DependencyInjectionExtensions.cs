@@ -1,4 +1,5 @@
 ﻿using Workly.Application.Interfaces;
+using Workly.Application.Interfaces.Services;
 using Workly.Application.Models;
 using Workly.Application.Services;
 using Workly.Domain.Interfaces;
@@ -21,6 +22,7 @@ namespace Workly.API.Extensions
             // Auth Services
             services.AddScoped<IAuthTokenGenerator, AuthTokenGenerator>();
             services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<ITokenService, TokenService>();
 
             //UserContext, userId aktarımı için
             services.AddScoped<IUserContext, UserContext>();
@@ -28,6 +30,8 @@ namespace Workly.API.Extensions
             //Mail
             services.Configure<SmtpSettings>(configuration.GetSection("SmtpSettings"));
             services.AddScoped<IMailService, MailService>();
+
+            
 
             return services;
         }

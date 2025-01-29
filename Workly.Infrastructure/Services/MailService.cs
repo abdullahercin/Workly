@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
+using Workly.Application.DTOs.Email;
 using Workly.Application.Interfaces;
 using Workly.Application.Models;
 
@@ -48,10 +49,15 @@ namespace Workly.Infrastructure.Services
                 var body = $"Mail gönderiminde hata oluştu. Alıcı:{errorToEmail} | Konu:{errorSubject} | Hata mesajı: {ex.Message}";
                 await SendEmailAsync(supportEmail, subject, body);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 logger.LogError(ex, "Mail gönderiminde hata oluştu.");
             }
+        }
+
+        public async Task SendEmailAsync(EmailModel emailModel)
+        {
+            await SendEmailAsync(emailModel.To, emailModel.Subject, emailModel.Body);
         }
     }
 }

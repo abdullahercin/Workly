@@ -12,7 +12,7 @@ namespace Workly.Infrastructure.Persistence.Configurations
             builder.ToTable("User");
 
             // Primary Key
-            builder.HasKey(u => u.RecId);
+            builder.HasKey(u => u.Id);
 
             // Email alanı
             builder.HasIndex(u => u.Email)
@@ -36,28 +36,10 @@ namespace Workly.Infrastructure.Persistence.Configurations
             builder.Property(u => u.PhoneNumber)
                 .HasMaxLength(20);
 
-            // IsEmailConfirmed alanı
-            builder.Property(u => u.IsEmailConfirmed)
-                .IsRequired()
-                .HasDefaultValue(false);
-
-            // EmailConfirmationToken alanı (opsiyonel)
-            builder.Property(u => u.EmailConfirmationToken)
-                .HasMaxLength(100);
-
-            // EmailConfirmationTokenExpiry alanı (opsiyonel)
-            builder.Property(u => u.EmailConfirmationTokenExpiry);
-
             // IsActive alanı
             builder.Property(u => u.IsActive)
                 .IsRequired()
                 .HasDefaultValue(false);
-
-            // IsLocked alanı
-            builder.Property(u => u.IsLocked)
-                .IsRequired()
-                .HasDefaultValue(false);
-
             // LastLoginAt alanı (opsiyonel)
             builder.Property(u => u.LastLoginAt);
 

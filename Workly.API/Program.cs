@@ -6,7 +6,7 @@ using Workly.Infrastructure.Persistence.Context;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Serilog Konfigürasyonu
+// Serilog Konfigï¿½rasyonu
 if (!Directory.Exists("Logs"))
 {
     Directory.CreateDirectory("Logs");
@@ -31,26 +31,29 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddDbContext<WorklyDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("SQLiteConnection")));
 
+builder.Services.AddIdentityServices();
+
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddAuthorization();
+
 
 builder.Services.AddApplicationServices(builder.Configuration);
 
 var app = builder.Build();
 
-//Veritabaný oluþtur ve kontrol et
+//Veritabanï¿½ oluï¿½tur ve kontrol et
 using var scope = app.Services.CreateScope();
 var dbContext = scope.ServiceProvider.GetRequiredService<WorklyDbContext>();
 
 try
 {
-    // Veritabanýný güncelle
+    // Veritabanï¿½nï¿½ gï¿½ncelle
     dbContext.Database.Migrate();
-    Log.Information("Veritabaný baþarýyla güncellendi.");
+    Log.Information("Veritabanï¿½ baï¿½arï¿½yla gï¿½ncellendi.");
 }
 catch (Exception ex)
 {
-    Log.Error($"Veritabaný güncellenirken hata oluþtu: {ex.Message}");
+    Log.Error($"Veritabanï¿½ gï¿½ncellenirken hata oluï¿½tu: {ex.Message}");
 }
 
 
@@ -60,7 +63,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-// Swagger UI'ý ekle
+// Swagger UI'ï¿½ ekle
 if (app.Environment.IsDevelopment())
 {
     app.UseSwaggerUI();
@@ -70,10 +73,10 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
-// Kullanýcý kimliðini almak için middleware ekle
+// Kullanï¿½cï¿½ kimliï¿½ini almak iï¿½in middleware ekle
 app.UseMiddleware<UserContextMiddleware>();
 
-// Hata yönetimi middleware'ini ekle
+// Hata yï¿½netimi middleware'ini ekle
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.MapControllers();

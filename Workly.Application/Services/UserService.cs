@@ -1,44 +1,45 @@
-﻿using System.Security.Cryptography;
-using System.Text;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Workly.Application.DTOs.Users;
 using Workly.Application.Interfaces;
 using Workly.Domain.Entities;
 using Workly.Domain.Exceptions;
-using Workly.Domain.Interfaces;
+using Microsoft.AspNetCore.Identity;
+using System.Net;
 
 namespace Workly.Application.Services
 {
-    public class UserService(IUserRepository repository, IMailService mailService, ILogger<UserService> logger, IConfiguration config) : IUserService
+    public class UserService(
+        UserManager<User> userManager, 
+        IMailService mailService, 
+        ILogger<UserService> logger, 
+        IConfiguration config) : IUserService
     {
         private readonly string baseApiUrl = config.GetValue<string>("BaseApiUrl");
-        //Yeni kullanıcı oluşturur
+
         public async Task<int> CreateUserAsync(RegisterUserDto registerUserDto, CancellationToken cancellationToken = default)
         {
-            //Kullanıcının mail adresi daha önce kullanılmış mı diye kontrol et, kullanılmışsa hata fırlat
-            if (await IsEmailExistAsync(registerUserDto.Email, cancellationToken))
-            {
-                throw new UserAlreadyExistException(registerUserDto.Email);
-            }
-
-            // Kullanıcı oluşturma
             var user = new User
             {
                 Email = registerUserDto.Email,
-                PasswordHash = HashPassword(registerUserDto.Password),
+                UserName = registerUserDto.Email, // Identity için gerekli
                 Name = registerUserDto.Name,
                 PhoneNumber = registerUserDto.PhoneNumber,
-                EmailConfirmationToken = Guid.NewGuid().ToString(),
-                EmailConfirmationTokenExpiry = DateTime.UtcNow.AddHours(24)
             };
 
-            var userId = await repository.AddAsync(user, cancellationToken);
+            var result = await userManager.CreateAsync(user, registerUserDto.Password);
+            
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                throw new ApplicationException($"Kullanıcı oluşturma hatası: {errors}");
+            }
 
-            //Kullanıcıya doğrulama maili gönder
             try
             {
-                var confirmationLink = $"{baseApiUrl}users/confirm-email?token={user.EmailConfirmationToken}";
+                var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
+                var encodedToken = WebUtility.UrlEncode(Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(token)));
+                var confirmationLink = $"{baseApiUrl}users/confirm-email?userId={user.Id}&token={encodedToken}";
                 var emailBody = $"Merhaba {user.Name}, lütfen hesabınızı doğrulamak için <a href=\"{confirmationLink}\">bu bağlantıyı</a> tıklayın.";
                 await mailService.SendEmailAsync(user.Email, "Hesabınızı Doğrulayın", emailBody);
             }
@@ -47,38 +48,40 @@ namespace Workly.Application.Services
                 logger.LogError(ex, "Doğrulama maili gönderilirken hata oluştu.");
             }
 
-            return userId;
+            return user.Id;
         }
 
-        //Kullanıcının mail adresi daha önce kullanılmış mı diye kontrol et
-        private async Task<bool> IsEmailExistAsync(string email, CancellationToken cancellationToken = default)
+        public async Task<bool> ConfirmEmailAsync(string userId, string token, CancellationToken cancellationToken = default)
         {
-            var isEmailExist = await repository.WhereAsync(x => x.Email == email, cancellationToken);
-            return isEmailExist.Any();
-        }
-
-        private static string HashPassword(string password)
-        {
-            using var hmac = new HMACSHA256();
-            return Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(password)));
-        }
-
-        public async Task<bool> ConfirmEmailAsync(string token, CancellationToken cancellationToken = default)
-        {
-            var user = await repository.GetUserByEmailTokenAsync(token, cancellationToken);
-
-            if (user == null || user.EmailConfirmationTokenExpiry < DateTime.UtcNow)
+            var user = await userManager.FindByIdAsync(userId);
+            if (user == null)
             {
-                throw new Exception("Token geçersiz veya süresi dolmuş.");
+                throw new NotFoundException("Kullanıcı bulunamadı.");
             }
 
-            // User nesnesinin alanlarını manuel olarak güncelle
-            user.IsEmailConfirmed = true;
-            user.IsActive = true;
+            try 
+            {
+                var decodedToken = System.Text.Encoding.UTF8.GetString(
+                    Convert.FromBase64String(WebUtility.UrlDecode(token)));
+                
+                var result = await userManager.ConfirmEmailAsync(user, decodedToken);
+                if (!result.Succeeded)
+                {
+                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                    logger.LogError("Email doğrulama hatası: {Errors}", errors);
+                    throw new Exception($"E-posta doğrulama işlemi başarısız oldu: {errors}");
+                }
 
-            await repository.UpdateAsync(user, cancellationToken);
+                user.IsActive = true;
+                await userManager.UpdateAsync(user);
 
-            return true;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Token decode edilirken veya doğrulama sırasında hata oluştu");
+                throw;
+            }
         }
     }
 }
