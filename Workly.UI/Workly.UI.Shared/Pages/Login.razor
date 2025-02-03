@@ -1,0 +1,134 @@
+﻿@page "/login"
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components.Forms
+
+@* @using Workly.Application.DTOs.Auth*@
+@inject NavigationManager NavigationManager
+@inject HttpClient Http
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h2 class="text-center mb-4">Giriş Yap</h2>
+                    <EditForm Model="@loginModel" OnValidSubmit="@HandleLogin">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <InputText id="email" class="form-control" @bind-Value="loginModel.Email" />
+                            <ValidationMessage For="@(() => loginModel.Email)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Şifre</label>
+                            <InputText type="password" id="password" class="form-control" @bind-Value="loginModel.Password" />
+                            <ValidationMessage For="@(() => loginModel.Password)" />
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(error))
+                        {
+                            <div class="alert alert-danger" role="alert">
+                                @error
+                            </div>
+                        }
+
+                        <button type="submit" class="btn btn-primary w-100">Giriş Yap</button>
+                    </EditForm>
+                    <div class="text-center mt-3">
+                        <a href="/register" class="text-decoration-none">Hesabınız yok mu? Kayıt olun</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginDto loginModel = new();
+    private string error;
+
+    private async Task HandleLogin()
+    {
+        try
+        {
+            var response = await Http.PostAsJsonAsync("https://localhost:5001/api/auth/login", loginModel);
+            if (response.IsSuccessStatusCode)
+            {
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<AuthResponseDto>>();
+                if (apiResponse?.IsSuccess == true)  // API'den gelen yanıt başarılı mı?
+                {                  
+                    var result = apiResponse.Data;            
+                   //await LocalStorage.RemoveItemAsync("token"); // Token'ı sil
+                    NavigationManager.NavigateTo("/index");  
+                }
+                else
+                {                 
+                    error = apiResponse?.Message ?? "Bir hata oluştu.";
+                }
+            }
+            else
+            {
+                // HTTP durum kodu başarısızsa
+                error = "Api istek sırasında hata oluştu.";
+            }
+        }
+        catch (Exception ex)
+        {
+            // Diğer hatalar için genel hata mesajı
+            error = "Bir hata oluştu: " + ex.Message;
+        }
+    }
+
+    public class LoginDto
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+    }
+
+    public class LoginResult
+    {
+        public string Token { get; set; }
+    }
+
+    public class ApiResponse<T>
+    {
+        public bool IsSuccess { get; set; }
+        public string? Message { get; set; }
+        public T? Data { get; set; }
+        public List<string>? Errors { get; set; }
+
+        // Başarılı Response
+        public static ApiResponse<T> Success(T data, string? message = null)
+        {
+            return new ApiResponse<T>
+                {
+                    IsSuccess = true,
+                    Data = data,
+                    Message = message ?? "İşlem başarılı",
+                };
+        }
+
+        // Başarısız Response
+        public static ApiResponse<T> Fail(string errorMessage, List<string>? errors = null)
+        {
+            return new ApiResponse<T>
+                {
+                    IsSuccess = false,
+                    Message = errorMessage,
+                    Errors = errors,
+                };
+        }
+
+        // Hızlı kullanım için implicit operator
+        public static implicit operator ApiResponse<T>(T data) => Success(data);
+    }
+    public class AuthResponseDto
+    {
+        public string Token { get; set; } = null!;
+        public string Email { get; set; } = null!;
+        public string UserName { get; set; } = null!;
+    }
+
+}

@@ -12,6 +12,8 @@ using System.Net;
 using Workly.Application.Interfaces;
 using Workly.Infrastructure.Services;
 using Workly.Application.DTOs.Email;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
 
 namespace Workly.API.Controllers
 {
@@ -84,6 +86,15 @@ namespace Workly.API.Controllers
                 }
 
                 _logger.LogInformation("User {Email} logged in successfully", user.Email);
+
+                Response.Cookies.Append("AuthToken", token, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true, // Sadece HTTPS üzerinden gönder
+                    SameSite = SameSiteMode.None, // Cross-site isteklere izin ver
+                    IsEssential=true,
+                    Expires = DateTime.UtcNow.AddHours(1) // Cookie'nin süresi
+                });
 
                 return Ok(ApiResponse<AuthResponseDto>.Success(new AuthResponseDto
                 {
@@ -172,10 +183,17 @@ namespace Workly.API.Controllers
                     _logger.LogWarning("Logout attempt failed: User not found for email {Email}", email);
                     return Ok(ApiResponse<object>.Fail("Kullanıcı bulunamadı"));
                 }
-
+                
                 user.RefreshToken = null;
                 user.RefreshTokenExpiry = null;
                 var result = await _userManager.UpdateAsync(user);
+                // AuthToken cookie'sini temizle
+                Response.Cookies.Delete("AuthToken", new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict
+                });
 
                 if (!result.Succeeded)
                 {

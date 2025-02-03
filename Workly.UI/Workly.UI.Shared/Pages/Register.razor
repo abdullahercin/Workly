@@ -1,0 +1,147 @@
+﻿@page "/register"
+@using Microsoft.AspNetCore.Components.Forms
+@* @using Workly.Application.DTOs.Users
+ *@
+@inject NavigationManager NavigationManager
+@inject HttpClient Http
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h2 class="text-center mb-4">Kayıt Ol</h2>
+
+                    @if (!string.IsNullOrEmpty(error))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            @error
+                        </div>
+                    }
+
+                    <EditForm Model="@registerDto" OnValidSubmit="@HandleRegistration">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Ad Soyad</label>
+                            <InputText id="name" class="form-control" @bind-Value="registerDto.Name" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <InputText id="email" class="form-control" @bind-Value="registerDto.Email" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Telefon</label>
+                            <InputText id="phone" class="form-control" @bind-Value="registerDto.PhoneNumber" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Şifre</label>
+                            <InputText type="password" id="password" class="form-control" @bind-Value="registerDto.Password" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Şifre Tekrar</label>
+                            <InputText type="password" id="confirmPassword" class="form-control" @bind-Value="registerDto.ConfirmPassword" />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Kayıt Ol</button>
+                    </EditForm>
+                    <div class="text-center mt-3">
+                        <a href="/login" class="text-decoration-none">Zaten hesabınız var mı? Giriş yapın</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RegisterUserDto registerDto = new();
+    private string error;
+
+    private async Task HandleRegistration()
+    {
+        try
+        {
+            var response = await Http.PostAsJsonAsync("https://localhost:5001/api/users/register", registerDto);
+            if (response.IsSuccessStatusCode)
+            {
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<AuthResponseDto>>();
+                if (apiResponse?.IsSuccess == true)  // API'den gelen yanıt başarılı mı?
+                {
+                    var result = apiResponse.Data;
+                    /// await LocalStorage.SetItemAsync("token", result.Token); Kontrol ettt
+                    NavigationManager.NavigateTo("/login");
+                }
+                else
+                {
+                    error = apiResponse?.Message ?? "Bir hata oluştu.";
+                }
+            }
+            else
+            {
+                error = "Api istek sırasında hata oluştu.";
+            }           
+        }
+        catch (Exception ex)
+        {
+            error = "Bir hata oluştu: " + ex.Message;
+        }
+    }
+    public class RegisterUserDto
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+        public string ConfirmPassword { get; set; }
+        public string Name { get; set; }
+        public string? PhoneNumber { get; set; }
+    }
+    private class ErrorResponse
+    {
+        public string Message { get; set; }
+    }
+    public class ApiResponse<T>
+    {
+        public bool IsSuccess { get; set; }
+        public string? Message { get; set; }
+        public T? Data { get; set; }
+        public List<string>
+            ? Errors
+        { get; set; }
+
+        // Başarılı Response
+        public static ApiResponse<T>
+            Success(T data, string? message = null)
+        {
+            return new ApiResponse<T>
+                {
+                    IsSuccess = true,
+                    Data = data,
+                    Message = message ?? "İşlem başarılı",
+                };
+        }
+
+        // Başarısız Response
+        public static ApiResponse<T>
+            Fail(string errorMessage, List<string>
+                ? errors = null)
+        {
+            return new ApiResponse<T>
+                {
+                    IsSuccess = false,
+                    Message = errorMessage,
+                    Errors = errors,
+                };
+        }
+
+        // Hızlı kullanım için implicit operator
+        public static implicit operator ApiResponse<T>
+            (T data) => Success(data);
+    }
+    public class AuthResponseDto
+    {
+        public string Token { get; set; } = null!;
+        public string Email { get; set; } = null!;
+        public string UserName { get; set; } = null!;
+    }
+}

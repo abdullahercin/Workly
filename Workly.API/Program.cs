@@ -18,6 +18,27 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.File("Logs/error-.log", rollingInterval: RollingInterval.Day, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Error)
     .CreateLogger();
 
+// Burada servisleri ekleyebilirsiniz
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAllOrigins",
+            builder =>
+            {
+                builder.WithOrigins("https://localhost:7193")  // Blazor UI URL
+                      .AllowCredentials() // Cookie ve authorization header gönderimine izin ver
+                       .AllowAnyMethod() // Tüm HTTP metodlarına izin ver
+                       .AllowAnyHeader(); // Tüm header'lara izin ver
+            });
+});
+
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // HTTPS için zorunlu
+    options.Cookie.SameSite = SameSiteMode.None; // Cross-Origin istekler için gerekli
+});
+
+
 // Serilog'u Kullan
 builder.Host.UseSerilog();
 
@@ -44,6 +65,8 @@ var app = builder.Build();
 //Veritaban� olu�tur ve kontrol et
 using var scope = app.Services.CreateScope();
 var dbContext = scope.ServiceProvider.GetRequiredService<WorklyDbContext>();
+app.UseCors("AllowAllOrigins"); // CORS'u etkinleştir
+
 
 try
 {
