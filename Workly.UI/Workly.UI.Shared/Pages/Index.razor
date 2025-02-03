@@ -31,7 +31,7 @@
     {
         try
         {
-            var response = await Http.PostAsJsonAsync("https://localhost:5001/api/auth/logout",, new { });
+            var response = await Http.PostAsJsonAsync("https://localhost:5001/api/auth/logout", new { });
             if (response.IsSuccessStatusCode)
             {
                 var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<AuthResponseDto>>();
