@@ -16,6 +16,7 @@ namespace Workly.API.Extensions
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+
             })
             .AddJwtBearer(options =>
             {
@@ -34,6 +35,18 @@ namespace Workly.API.Extensions
 
                 options.Events = new JwtBearerEvents
                 {
+                    OnMessageReceived = context =>
+                    {
+                        // Cookie'den token'ı al
+                        var token = context.Request.Cookies["AuthToken"];
+                        if (!string.IsNullOrEmpty(token))
+                        {
+                            // Eğer token varsa, doğrulama için ekle
+                            context.Token = token;
+                        }
+                        return Task.CompletedTask;
+                    },
+
                     OnAuthenticationFailed = context =>
                     {
                         if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
@@ -47,5 +60,6 @@ namespace Workly.API.Extensions
 
             return services;
         }
+
     }
 }

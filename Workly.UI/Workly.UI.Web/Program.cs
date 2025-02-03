@@ -1,3 +1,4 @@
+using System.Net;
 using Workly.UI.Shared.Services;
 using Workly.UI.Web.Components;
 using Workly.UI.Web.Services;
@@ -11,6 +12,18 @@ builder.Services.AddRazorComponents()
 
 // Add device-specific services used by the Workly.UI.Shared project
 builder.Services.AddSingleton<IFormFactor, FormFactor>();
+
+builder.Services.AddHttpClient("AuthorizedClient", client =>
+{
+    client.BaseAddress = new Uri("https://localhost:5001/");
+}).ConfigurePrimaryHttpMessageHandler(() =>
+{
+    var handler = new HttpClientHandler();
+    handler.UseCookies = true; // Cookie desteðini aç
+    handler.CookieContainer = new CookieContainer();
+    return handler;
+});
+
 
 var app = builder.Build();
 

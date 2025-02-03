@@ -1,0 +1,103 @@
+﻿@page "/index"
+@using System.Net.Http.Headers
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+
+<div class="container d-flex justify-content-center align-items-center vh-100">
+    <div class="card shadow-lg p-4 text-center" style="max-width: 400px; width: 100%;">
+        <div class="card-body">
+            <h2 class="card-title text-primary">Hoşgeldiniz!</h2>
+            <p class="card-text text-muted">Başarılı bir şekilde giriş yaptınız.</p>
+
+            <!-- Çıkış Yap Butonu -->
+            <button class="btn btn-danger w-100 mt-3" @onclick="LogOut">
+                <i class="bi bi-box-arrow-right"></i> Çıkış Yap
+            </button>
+
+            <!-- Hata Mesajı -->
+            @if (!string.IsNullOrEmpty(error))
+            {
+                <div class="alert alert-danger mt-3">
+                    <strong>@error</strong>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+@code {
+    private string error;
+    private async Task LogOut()
+    {
+        try
+        {
+            var response = await Http.PostAsJsonAsync("https://localhost:5001/api/auth/logout", new { });
+            if (response.IsSuccessStatusCode)
+            {
+                var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse<AuthResponseDto>>();
+                if (apiResponse?.IsSuccess == true)
+                {
+                    // Sayfayı yenile
+                    NavigationManager.NavigateTo("/login", forceLoad: true);
+                }
+                else
+                {
+                    error = apiResponse?.Message ?? "Bir hata oluştu.";
+                }
+            }
+            else
+            {
+                error = "API isteği sırasında hata oluştu.";
+            }
+        }
+        catch (Exception ex)
+        {
+            error = "Bir hata oluştu: " + ex.Message;
+        }
+    }
+
+    public class ApiResponse<T>
+    {
+        public bool IsSuccess { get; set; }
+        public string? Message { get; set; }
+        public T? Data { get; set; }
+        public List<string>
+            ? Errors
+        { get; set; }
+
+        // Başarılı Response
+        public static ApiResponse<T>
+            Success(T data, string? message = null)
+        {
+            return new ApiResponse<T>
+                {
+                    IsSuccess = true,
+                    Data = data,
+                    Message = message ?? "İşlem başarılı",
+                };
+        }
+
+        // Başarısız Response
+        public static ApiResponse<T>
+            Fail(string errorMessage, List<string>
+                ? errors = null)
+        {
+            return new ApiResponse<T>
+                {
+                    IsSuccess = false,
+                    Message = errorMessage,
+                    Errors = errors,
+                };
+        }
+
+        // Hızlı kullanım için implicit operator
+        public static implicit operator ApiResponse<T>
+            (T data) => Success(data);
+    }
+    public class AuthResponseDto
+    {
+        public string Token { get; set; } = null!;
+        public string Email { get; set; } = null!;
+        public string UserName { get; set; } = null!;
+    }
+}
